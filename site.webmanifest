@@ -1,0 +1,12 @@
+{
+  "name": "Beaki",
+  "short_name": "Beaki",
+  "description": "Nutrición personalizada que entiende tu contexto.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F7F6F1",
+  "theme_color": "#0F1F18",
+  "icons": [
+    { "src": "/assets/beaki-icon.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
