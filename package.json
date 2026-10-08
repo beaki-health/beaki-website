@@ -1,0 +1,12 @@
+{
+  "name": "beaki-website",
+  "private": true,
+  "description": "Dependency-free Beaki marketing site with browser checks",
+  "scripts": {
+    "test": "node tests/website.cjs"
+  },
+  "devDependencies": {
+    "axe-core": "4.11.1",
+    "playwright": "1.58.2"
+  }
+}
