@@ -4,6 +4,8 @@ Public landing page for [Beaki](https://www.beaki.app), hosted with GitHub Pages
 
 The production site uses semantic HTML, responsive CSS and vanilla JavaScript. Fonts, logos, the kiwi spinner and MIT-licensed Ionicons are served locally. There are no production dependencies or scroll-driven animations. Legal content is preserved in English and Spanish.
 
+The public [product search](/products.html) uses the Beaki search index through `GET https://api.beaki.app/public/products/search` and reads product details through `GET /public/products/{productRef}`. Product links include `?product_name=...&product_ref=...` so a URL opens the matching product and updates its page metadata. It does not show signed-in, profile-specific scores. The [diet and condition catalogue](/profiles.html) is a static bilingual snapshot of `../Beaki/apps/mobile/data/catalogues/profile_concepts.json` (version recorded in `assets/profile-catalog.json`). Entries without a concept description use the definition in `../Beaki/docs/profiles/`, with a concise English translation. Refresh the snapshot when the app catalogue changes.
+
 ## Local preview
 
 From this directory, run `python3 -m http.server 8080` and open `http://localhost:8080/`. Absolute asset paths require the repository to be the server root.
@@ -25,7 +27,7 @@ PLAYWRIGHT_ENGINE=webkit npm test
 
 To use an installed Google Chrome browser, run `PLAYWRIGHT_CHANNEL=chrome npm test`.
 
-The checks cover English and Spanish on the landing and legal pages at widths from 320px to 1440px; horizontal overflow; clipped preview text; translations; images and anchors; WCAG accessibility scans; profile and language switching; mobile navigation; saved and explicit language preferences; blocked storage; reduced motion; and rendering without JavaScript. Test dependencies are only needed for development.
+The checks cover English and Spanish on all four pages at widths from 320px to 1440px; horizontal overflow; clipped preview text; translations; images and anchors; WCAG accessibility scans; product and catalogue search; profile and language switching; mobile navigation; saved and explicit language preferences; blocked storage; reduced motion; and rendering without JavaScript. Test dependencies are only needed for development.
 
 ## Deployment
 

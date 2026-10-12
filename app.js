@@ -128,6 +128,7 @@
     });
     renderProfile();
     setMenu(nav?.classList.contains('is-open') || false);
+    document.dispatchEvent(new CustomEvent('beaki:locale', { detail: { locale } }));
     if (persist) {
       try { localStorage.setItem(localeKey, locale); } catch { /* Language selection also works without storage. */ }
       const url = new URL(location.href);

@@ -10,4 +10,6 @@
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
+  <url><loc>https://www.beaki.app/products.html</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
+  <url><loc>https://www.beaki.app/profiles.html</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>
 </urlset>

@@ -92,7 +92,7 @@ async function run() {
       page.on('response', (response) => { if (response.status() >= 400) errors.push(`${response.status()} ${response.url()}`); });
       page.on('requestfailed', (request) => errors.push(`${request.url()}: ${request.failure()?.errorText}`));
     });
-    for (const route of ['/', '/legal.html']) {
+    for (const route of ['/', '/legal.html', '/products.html', '/profiles.html']) {
       for (const lang of ['es', 'en']) {
         const page = await context.newPage();
         for (const width of widths) {
@@ -128,9 +128,9 @@ async function run() {
     const menu = page.locator('[data-menu-button]');
     await menu.click();
     assert.equal(await menu.getAttribute('aria-expanded'), 'true');
-    await page.locator('[data-nav] a[href="#privacidad"]').click();
+    await page.locator('[data-nav] a[href*="#privacy"]').click();
     assert.equal(await menu.getAttribute('aria-expanded'), 'false');
-    assert.equal(new URL(page.url()).hash, '#privacidad');
+    assert.equal(new URL(page.url()).hash, '#privacy');
     await page.evaluate(() => window.scrollTo(0, 0));
     await menu.click();
     await page.keyboard.press('Escape');
@@ -167,6 +167,45 @@ async function run() {
     assert.equal(await staticPage.locator('main section').count(), 10);
     await noJS.close();
     console.log('✓ All ten sections render without JavaScript');
+
+    const catalogue = await context.newPage();
+    await catalogue.goto(`${base}/profiles.html?lang=es`);
+    await catalogue.locator('.profile-card').first().waitFor();
+    assert.equal(await catalogue.locator('.profile-card').count(), 18);
+    await catalogue.locator('#profile-query').fill('celiaquia');
+    assert.match(await catalogue.locator('.profile-card').first().innerText(), /celiaquía/i);
+    await catalogue.locator('[data-kind="diet"]').click();
+    assert.equal(await catalogue.locator('.profile-card .card-eyebrow').evaluateAll((all) => all.every((el) => el.textContent === 'DIETA')), true);
+    await catalogue.locator('#profile-query').fill('');
+    assert.equal(await catalogue.locator('.profile-card').count(), 18);
+    await catalogue.locator('[data-locale="en"]').click();
+    assert.match(await catalogue.locator('.profile-card').first().innerText(), /diet/i);
+    await catalogue.close();
+
+    const productPage = await context.newPage();
+    const productRef = `p1_${'A'.repeat(56)}`;
+    await productPage.route('https://api.beaki.app/public/products/search?*', async (route) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ products: [{ productRef, name: 'Yogur natural Beaki', brand: 'Beaki', quantity: '500 g', market: 'ES', categories: [], completeness: 1 }] }) });
+    });
+    await productPage.route(`https://api.beaki.app/public/products/${productRef}`, async (route) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ product: { productRef, name: 'Yogur natural Beaki', brand: 'Beaki', quantity: '500 g', market: 'ES', ingredientsText: 'Leche y fermentos', nutrientsPer100: { energyKcal: 62, proteinG: 3.7, carbohydratesG: 4.8, fatG: 3.2 } } }) });
+    });
+    await productPage.goto(`${base}/products.html?lang=en`);
+    await productPage.locator('#product-query').fill('Yogur natural');
+    await productPage.locator('[data-product-form] button').click();
+    await productPage.locator('.product-card').waitFor();
+    assert.match(await productPage.locator('.product-card').innerText(), /Yogur natural Beaki/);
+    assert.match(await productPage.locator('.product-card a').getAttribute('href'), /product_name=Yogur\+natural\+Beaki/);
+    await productPage.locator('.product-card a').click();
+    await productPage.locator('[data-product-detail] h2').waitFor();
+    assert.match(await productPage.locator('[data-product-detail]').innerText(), /62 kcal/);
+    assert.match(productPage.url(), /product_name=Yogur\+natural\+Beaki/);
+    assert.match(await productPage.title(), /Yogur natural Beaki/);
+    await productPage.goto(`${base}/products.html?product_name=Yogur+natural+Beaki&lang=es`);
+    await productPage.locator('[data-product-detail] h2').waitFor();
+    assert.match(await productPage.locator('[data-product-detail]').innerText(), /Leche y fermentos/);
+    await productPage.close();
+    console.log('✓ Public product search and the complete profile catalogue are interactive');
 
     const links = await page.locator('a[href*="play.google.com"]').evaluateAll((all) => all.map((a) => a.href));
     assert(links.length >= 5 && links.every((href) => href === 'https://play.google.com/store/apps/details?id=com.hacktricks.beaki'));
