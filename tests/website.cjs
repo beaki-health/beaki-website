@@ -128,9 +128,9 @@ async function run() {
     const menu = page.locator('[data-menu-button]');
     await menu.click();
     assert.equal(await menu.getAttribute('aria-expanded'), 'true');
-    await page.locator('[data-nav] a[href*="#privacy"]').click();
+    await page.locator('[data-nav] a[href="#plus"]').click();
     assert.equal(await menu.getAttribute('aria-expanded'), 'false');
-    assert.equal(new URL(page.url()).hash, '#privacy');
+    assert.equal(new URL(page.url()).hash, '#plus');
     await page.evaluate(() => window.scrollTo(0, 0));
     await menu.click();
     await page.keyboard.press('Escape');

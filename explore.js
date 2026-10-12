@@ -119,6 +119,10 @@
       status.textContent = say('Buscando en Beaki…', 'Searching Beaki…');
       try {
         const response = await fetch(`https://api.beaki.app/public/products/search?q=${encodeURIComponent(query)}`, { signal: controller.signal });
+        if (response.status === 429) {
+          status.textContent = say('Has hecho muchas búsquedas. Espera un minuto e inténtalo de nuevo.', 'Too many searches. Please wait a minute and try again.');
+          return;
+        }
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json();
         if (id !== requestId) return;
