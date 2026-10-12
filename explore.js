@@ -22,6 +22,53 @@
     const detail = document.querySelector('[data-product-detail]');
     let controller, requestId = 0, products = [];
     let selectedProduct;
+    const formatNumber = value => new Intl.NumberFormat(lang() === 'es' ? 'es-ES' : 'en-GB', { maximumFractionDigits: value > 0 && value < 0.01 ? 4 : value > 0 && value < 1 ? 2 : 1 }).format(value);
+    const allergenNames = {
+      milk: ['Leche', 'Milk'], eggs: ['Huevos', 'Eggs'], egg: ['Huevos', 'Eggs'], gluten: ['Gluten', 'Gluten'], wheat: ['Trigo', 'Wheat'],
+      soybeans: ['Soja', 'Soy'], soy: ['Soja', 'Soy'], peanuts: ['Cacahuetes', 'Peanuts'], nuts: ['Frutos de cáscara', 'Tree nuts'],
+      fish: ['Pescado', 'Fish'], crustaceans: ['Crustáceos', 'Crustaceans'], molluscs: ['Moluscos', 'Molluscs'], celery: ['Apio', 'Celery'],
+      mustard: ['Mostaza', 'Mustard'], sesame: ['Sésamo', 'Sesame'], lupin: ['Altramuces', 'Lupin'], 'sulphur-dioxide-and-sulphites': ['Sulfitos', 'Sulphites']
+    };
+    const nutrientRows = [
+      ['energyKcal', 'Energía', 'Energy', 'kcal'], ['fatG', 'Grasas', 'Fat', 'g'], ['saturatedFatG', 'Grasas saturadas', 'Saturated fat', 'g'],
+      ['carbohydratesG', 'Hidratos de carbono', 'Carbohydrates', 'g'], ['sugarsG', 'Azúcares', 'Sugars', 'g'], ['fibreG', 'Fibra', 'Fibre', 'g'],
+      ['proteinG', 'Proteínas', 'Protein', 'g'], ['saltG', 'Sal', 'Salt', 'g'], ['sodiumMg', 'Sodio', 'Sodium', 'mg']
+    ];
+    const microNames = window.beakiMicronutrientLabels || {};
+    const label = pair => pair[lang() === 'es' ? 0 : 1];
+    const allergenLabel = value => {
+      const key = value.replace(/^[a-z]{2}:/i, '').toLowerCase();
+      return allergenNames[key] ? label(allergenNames[key]) : key.replaceAll('-', ' ');
+    };
+    const section = (title, className) => {
+      const container = node('section', `product-detail-section ${className}`);
+      container.append(node('h3', '', title));
+      return container;
+    };
+    const factGrid = (entries, estimatedKeys = []) => {
+      const grid = node('div', 'product-detail-facts');
+      entries.forEach(([key, title, unit, value]) => {
+        if (typeof value !== 'number' || !Number.isFinite(value)) return;
+        const fact = node('div', 'product-detail-fact');
+        fact.append(node('strong', '', `${formatNumber(value)} ${unit}`));
+        fact.append(node('span', '', title));
+        if (estimatedKeys.includes(key)) fact.append(node('small', '', say('Estimado', 'Estimated')));
+        grid.append(fact);
+      });
+      return grid;
+    };
+    const microGroupLabels = {
+      mineral: ['Minerales', 'Minerals'], vitamin: ['Vitaminas', 'Vitamins'], carotenoid: ['Carotenoides', 'Carotenoids'],
+      lipid: ['Lípidos', 'Lipids'], carb: ['Carbohidratos', 'Carbohydrates'], aminoAcid: ['Aminoácidos', 'Amino acids'], other: ['Otros componentes', 'Other components']
+    };
+    const appendMicroGroups = (parent, entries, estimatedKeys) => {
+      Object.entries(microGroupLabels).forEach(([group, names]) => {
+        const groupEntries = entries.filter(([key]) => (microNames[key]?.group || 'other') === group);
+        if (!groupEntries.length) return;
+        parent.append(node('h4', 'product-detail-group', label(names)));
+        parent.append(factGrid(groupEntries, estimatedKeys));
+      });
+    };
     const productUrl = product => {
       const url = new URL('/products.html', location.origin);
       url.searchParams.set('product_name', product.name);
@@ -50,17 +97,45 @@
         history.replaceState(null, '', `/products.html?lang=${lang()}`);
       });
       top.append(close); detail.replaceChildren(top);
-      const facts = node('div', 'product-detail-facts');
       const nutrients = product.nutrientsPer100 || {};
-      const format = new Intl.NumberFormat(lang() === 'es' ? 'es-ES' : 'en-GB', { maximumFractionDigits: 1 });
-      [[say('Energía', 'Energy'), nutrients.energyKcal, 'kcal'], [say('Proteínas', 'Protein'), nutrients.proteinG, 'g'], [say('Hidratos', 'Carbohydrates'), nutrients.carbohydratesG, 'g'], [say('Grasas', 'Fat'), nutrients.fatG, 'g']].forEach(([label, value, unit]) => {
-        if (typeof value !== 'number') return;
-        const fact = node('div', 'product-detail-fact');
-        fact.append(node('strong', '', `${format.format(value)} ${unit}`));
-        fact.append(node('span', '', `${label} / 100 g`)); facts.append(fact);
+      const basis = product.nutritionBasis === 'PER_100_ML' ? '100 ml' : '100 g';
+      const score = node('section', 'product-detail-score');
+      score.append(node('p', 'card-eyebrow', say('NOTA GENERAL', 'GENERAL SCORE')));
+      score.append(node('strong', '', typeof product.generalGrade === 'number' ? `${formatNumber(product.generalGrade)}/10` : '—/10'));
+      score.append(node('p', '', say('La nota general no incluye tu perfil. Consulta tu nota personalizada y recomendaciones en la app.', 'The general score does not use your profile. View your personal score and recommendations in the app.')));
+      detail.append(score);
+      const nutrition = section(`${say('Información nutricional', 'Nutrition facts')} / ${basis}`, 'product-detail-nutrition');
+      nutrition.append(factGrid(nutrientRows.map(([key, es, en, unit]) => [key, label([es, en]), unit, nutrients[key]])));
+      if (nutrition.querySelector('.product-detail-fact')) detail.append(nutrition);
+      const allergens = (product.allergens || []).filter(value => !/^(?:[a-z]{2}:)?(?:none|no|n\/a|ninguno)$/i.test(value));
+      const traces = (product.traces || []).filter(value => !/^(?:[a-z]{2}:)?(?:none|no|n\/a|ninguno)$/i.test(value));
+      const allergenSection = section(say('Alérgenos', 'Allergens'), 'product-detail-allergens');
+      allergenSection.append(node('p', 'product-detail-copy', allergens.length ? `${say('Declarados', 'Declared')}: ${allergens.map(allergenLabel).join(', ')}` : say('No constan alérgenos declarados.', 'No declared allergens listed.')));
+      if (traces.length) allergenSection.append(node('p', 'product-detail-copy', `${say('Posibles trazas', 'Possible traces')}: ${traces.map(allergenLabel).join(', ')}`));
+      detail.append(allergenSection);
+      const ingredients = section(say('Ingredientes', 'Ingredients'), 'product-detail-ingredients');
+      ingredients.append(node('p', 'product-detail-copy', product.ingredientsText || say('Ingredientes no disponibles.', 'Ingredients unavailable.')));
+      detail.append(ingredients);
+      const estimate = product.micronutrientEstimate;
+      const micro = estimate?.per100 || {};
+      const microEntries = Object.entries(micro).filter(([, value]) => typeof value === 'number' && value > 0).map(([key, value]) => {
+        const unit = key.endsWith('Ug') ? 'µg' : key.endsWith('G') ? 'g' : 'mg';
+        return [key, microNames[key]?.[lang()] || key.replace(/(Mg|Ug|G)$/, '').replace(/([a-z])([A-Z])/g, '$1 $2'), microNames[key]?.unit || unit, value];
       });
-      if (facts.childElementCount) detail.append(facts);
-      if (product.ingredientsText) detail.append(node('p', 'product-detail-copy', `${say('Ingredientes', 'Ingredients')}: ${product.ingredientsText}`));
+      const massEntries = Object.entries(estimate?.massEstimate?.per100 || {}).filter(([, value]) => typeof value === 'number' && value > 0).map(([key, value]) => {
+        const unit = key.endsWith('Ug') ? 'µg' : key.endsWith('G') ? 'g' : 'mg';
+        return [key, microNames[key]?.[lang()] || key.replace(/(Mg|Ug|G)$/, '').replace(/([a-z])([A-Z])/g, '$1 $2'), microNames[key]?.unit || unit, value];
+      });
+      const micronutrients = section(say('Micronutrientes', 'Micronutrients'), 'product-detail-micronutrients');
+      if (microEntries.length) {
+        micronutrients.append(node('p', 'product-detail-hint', `${say('Por', 'Per')} ${estimate.nutritionBasis === 'PER_100_ML' ? '100 ml' : '100 g'}. ${estimate.estimatedKeys?.length ? say('Los valores marcados son estimaciones.', 'Marked values are estimates.') : say('Valores declarados en la etiqueta.', 'Values declared on the label.')}`));
+        appendMicroGroups(micronutrients, microEntries, estimate.estimatedKeys || []);
+      } else if (!massEntries.length) micronutrients.append(node('p', 'product-detail-copy', say('No hay datos de micronutrientes para este producto.', 'Micronutrient data is unavailable for this product.')));
+      if (massEntries.length) {
+        micronutrients.append(node('p', 'product-detail-hint', say('Estimación independiente por 100 g a partir de los ingredientes; no se suma a los valores de la etiqueta.', 'Independent estimate per 100 g from ingredients; do not add it to label values.')));
+        appendMicroGroups(micronutrients, massEntries, massEntries.map(([key]) => key));
+      }
+      detail.append(micronutrients);
       const app = node('a', 'product-detail-app', say('Ver en la app Beaki ↗', 'View in the Beaki app ↗'));
       app.href = `https://api.beaki.app/product/${encodeURIComponent(product.productRef)}`;
       detail.append(app);
@@ -84,7 +159,7 @@
       if (!response.ok) return;
       const data = await response.json();
       if (data.product && data.product.productRef === product.productRef) {
-        selectedProduct = data.product;
+        selectedProduct = { ...data.product, generalGrade: data.generalGrade, micronutrientEstimate: data.micronutrientEstimate };
         renderDetail();
       }
     };

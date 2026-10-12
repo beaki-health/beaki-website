@@ -188,7 +188,7 @@ async function run() {
       await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ products: [{ productRef, name: 'Yogur natural Beaki', brand: 'Beaki', quantity: '500 g', market: 'ES', categories: [], completeness: 1 }] }) });
     });
     await productPage.route(`https://api.beaki.app/public/products/${productRef}`, async (route) => {
-      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ product: { productRef, name: 'Yogur natural Beaki', brand: 'Beaki', quantity: '500 g', market: 'ES', ingredientsText: 'Leche y fermentos', nutrientsPer100: { energyKcal: 62, proteinG: 3.7, carbohydratesG: 4.8, fatG: 3.2 } } }) });
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ product: { productRef, name: 'Yogur natural Beaki', brand: 'Beaki', quantity: '500 g', market: 'ES', ingredientsText: 'Leche y fermentos', allergens: ['en:milk'], traces: ['en:nuts'], nutrientsPer100: { energyKcal: 62, proteinG: 3.7, carbohydratesG: 4.8, fatG: 3.2, saturatedFatG: 2, sugarsG: 4.8, saltG: 0.12 } }, generalGrade: 8.2, micronutrientEstimate: { per100: { calciumMg: 120 }, estimatedKeys: ['calciumMg'], nutritionBasis: 'PER_100_G' } }) });
     });
     await productPage.goto(`${base}/products.html?lang=en`);
     await productPage.locator('#product-query').fill('Yogur natural');
@@ -199,6 +199,9 @@ async function run() {
     await productPage.locator('.product-card a').click();
     await productPage.locator('[data-product-detail] h2').waitFor();
     assert.match(await productPage.locator('[data-product-detail]').innerText(), /62 kcal/);
+    assert.match(await productPage.locator('[data-product-detail]').innerText(), /8.2\/10/);
+    assert.match(await productPage.locator('[data-product-detail]').innerText(), /Milk/);
+    assert.match(await productPage.locator('[data-product-detail]').innerText(), /120 mg/);
     assert.match(productPage.url(), /product_name=Yogur\+natural\+Beaki/);
     assert.match(await productPage.title(), /Yogur natural Beaki/);
     await productPage.goto(`${base}/products.html?product_name=Yogur+natural+Beaki&lang=es`);
