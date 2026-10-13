@@ -37,6 +37,11 @@
     const microNames = window.beakiMicronutrientLabels || {};
     const reasonNames = window.beakiScoreReasonLabels || {};
     const label = pair => pair[lang() === 'es' ? 0 : 1];
+    const ingredientLabel = value => {
+      if (typeof value !== 'string' || !/[A-ZÁÉÍÓÚÜÑ]/.test(value) || value !== value.toLocaleUpperCase('es-ES')) return value;
+      const lower = value.toLocaleLowerCase('es-ES').replace(/\b(uht|dop|igp|e\s*-?\s*\d{3,4})\b/gi, match => match.toLocaleUpperCase('es-ES'));
+      return lower.replace(/[a-záéíóúüñ]/i, letter => letter.toLocaleUpperCase('es-ES'));
+    };
     const allergenLabel = value => {
       const key = value.replace(/^[a-z]{2}:/i, '').toLowerCase();
       return allergenNames[key] ? label(allergenNames[key]) : key.replaceAll('-', ' ');
@@ -128,6 +133,29 @@
       scoreBreakdown.append(scoreRows); score.append(scoreBreakdown);
       detail.append(score);
       const nutrition = section(`${say('Información nutricional', 'Nutrition facts')} / ${basis}`, 'product-detail-nutrition');
+      const macroParts = [
+        ['proteinG', say('Proteínas', 'Protein'), 'protein'],
+        ['carbohydratesG', say('Hidratos', 'Carbs'), 'carbs'],
+        ['fatG', say('Grasas', 'Fat'), 'fat']
+      ].map(([key, title, color]) => ({ title, color, grams: Number.isFinite(nutrients[key]) ? Math.max(0, nutrients[key]) : 0 }));
+      const macroTotal = macroParts.reduce((sum, part) => sum + part.grams, 0);
+      if (macroTotal > 0 && ['proteinG', 'carbohydratesG', 'fatG'].every(key => Number.isFinite(nutrients[key]))) {
+        const macroChart = node('div', 'product-detail-macro-chart');
+        const macroLine = node('div', 'product-detail-macro-line');
+        macroLine.setAttribute('role', 'img');
+        macroLine.setAttribute('aria-label', `${say('Proporción entre macronutrientes', 'Macronutrient proportions')}: ${macroParts.map(part => `${part.title} ${formatNumber(part.grams / macroTotal * 100)} %`).join(', ')}`);
+        const macroLegend = node('div', 'product-detail-macro-legend');
+        macroParts.forEach(part => {
+          if (!part.grams) return;
+          const segment = node('span', `product-detail-macro-${part.color}`);
+          segment.style.flexGrow = String(part.grams);
+          macroLine.append(segment);
+          const item = node('span', `product-detail-macro-${part.color}`, `${part.title} ${formatNumber(part.grams / macroTotal * 100)} %`);
+          macroLegend.append(item);
+        });
+        macroChart.append(macroLine, macroLegend, node('p', 'product-detail-macro-note', say('Porcentaje entre proteínas, hidratos y grasas indicados; no es el % de ingesta diaria.', 'Share of the listed protein, carbs and fat; not a daily intake percentage.')));
+        nutrition.append(macroChart);
+      }
       nutrition.append(factGrid(nutrientRows.map(([key, es, en, unit]) => [key, label([es, en]), unit, nutrients[key]])));
       if (nutrition.querySelector('.product-detail-fact')) detail.append(nutrition);
       const allergens = (product.allergens || []).filter(value => !/^(?:[a-z]{2}:)?(?:none|no|n\/a|ninguno)$/i.test(value));
@@ -140,7 +168,7 @@
       if (product.ingredientItems?.length) {
         const list = node('ul', 'product-detail-ingredient-list');
         product.ingredientItems.forEach(item => {
-          const entry = node('li', '', item.text);
+          const entry = node('li', '', ingredientLabel(item.text));
           if (item.depth) entry.style.marginInlineStart = `${Math.min(item.depth, 3) * 16}px`;
           list.append(entry);
         });

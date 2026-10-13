@@ -32,3 +32,14 @@
 .product-detail-ingredient-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px 20px;margin:10px 0 0;padding-left:20px;color:#405145;font-size:13px;line-height:1.5}.product-detail-ingredient-list li{padding:2px 0}
 .product-detail-micronutrients{margin-top:20px;padding-top:2px}.product-detail-micronutrients>summary{font-size:20px;font-family:var(--serif)}.product-detail-micronutrients .product-detail-hint{margin:3px 0 9px}.product-detail-micronutrients .product-detail-group{margin-top:16px}.product-detail-micronutrients .product-detail-facts{margin-top:2px}.product-detail-micronutrients .product-detail-fact{padding:6px 0}.product-detail-micronutrients .product-detail-fact span{flex:1}.product-detail-micronutrients .product-detail-fact small{order:2}
 @media(max-width:560px){.product-detail-score-header{align-items:flex-start}.product-detail-score-header>p{max-width:155px}.product-detail-facts,.product-detail-ingredient-list{grid-template-columns:1fr}.product-detail-fact{padding:7px 0}.product-detail-micronutrients .product-detail-fact{padding:6px 0}}
+.product-detail-macro-chart{margin-top:14px}
+.product-detail-macro-line{display:flex;height:10px;overflow:hidden;border-radius:99px;background:#e6eae2}
+.product-detail-macro-line span{flex-basis:0;min-width:0}
+.product-detail-macro-line span+span{border-left:2px solid rgba(255,255,255,.88)}
+.product-detail-macro-protein{--macro-color:#b4553f}.product-detail-macro-carbs{--macro-color:#2f6480}.product-detail-macro-fat{--macro-color:#8a5a00}
+.product-detail-macro-line .product-detail-macro-protein,.product-detail-macro-line .product-detail-macro-carbs,.product-detail-macro-line .product-detail-macro-fat{background:var(--macro-color)}
+.product-detail-macro-legend{display:flex;flex-wrap:wrap;gap:5px 17px;margin-top:9px}
+.product-detail-macro-legend span{display:inline-flex;align-items:center;gap:6px;color:#405145;font-size:11px;font-weight:700}
+.product-detail-macro-legend span::before{content:'';width:8px;height:8px;flex:none;border-radius:50%;background:var(--macro-color)}
+.product-detail-macro-note{margin:6px 0 0;color:#667469;font-size:10px;line-height:1.4}
+@media(min-width:1000px){.product-detail-micronutrients .product-detail-facts,.product-detail-ingredient-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
