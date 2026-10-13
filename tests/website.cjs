@@ -187,7 +187,7 @@ async function run() {
     let productSearchCalls = 0;
     await productPage.route('https://api.beaki.app/public/products/search?*', async (route) => {
       productSearchCalls++;
-      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ products: [{ productRef, name: 'Yogur natural Beaki', brand: 'Beaki', quantity: '500 g', market: 'ES', categories: [], completeness: 1 }] }) });
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ products: [{ productRef, name: 'Yogur natural Beaki', brand: 'Beaki', quantity: '500 g', market: 'ES', categories: ['food.dairy'], completeness: 1, insight: { generalGrade: 8.2 } }] }) });
     });
     await productPage.route(`https://api.beaki.app/public/products/${productRef}`, async (route) => {
       await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ product: { productRef, name: 'Yogur natural Beaki', brand: 'Beaki', quantity: '500 g', market: 'ES', ingredientsText: 'LECHE UHT Y FERMENTOS', allergens: ['en:milk'], traces: ['en:nuts'], nutrientsPer100: { energyKcal: 62, proteinG: 3.7, carbohydratesG: 4.8, fatG: 3.2, saturatedFatG: 2, sugarsG: 4.8, saltG: 0.12 } }, generalGrade: 8.2, generalScoreFactors: [{ code: 'CLEAN_INGREDIENTS', effect: 0.2 }, { code: 'MODERATE_SUGAR', effect: -1 }], ingredientItems: [{ text: 'LECHE UHT', depth: 0, tone: 'NEUTRAL', highlights: [] }, { text: 'FERMENTOS', depth: 0, tone: 'NEUTRAL', highlights: [] }, { text: 'ASPARTAMO', depth: 0, tone: 'NEGATIVE', highlights: [{ start: 0, end: 9, tone: 'NEGATIVE' }] }], micronutrientEstimate: { per100: { calciumMg: 120 }, estimatedKeys: ['calciumMg'], nutritionBasis: 'PER_100_G' } }) });
@@ -197,6 +197,8 @@ async function run() {
     await productPage.locator('[data-product-form] button').click();
     await productPage.locator('.product-card').waitFor();
     assert.match(await productPage.locator('.product-card').innerText(), /Yogur natural Beaki/);
+    assert.equal(await productPage.locator('.product-card .product-score').getAttribute('aria-label'), 'General score: 8.2 out of 10');
+    assert.equal(await productPage.locator('.product-card .product-nutrition').count(), 0);
     assert.match(await productPage.locator('.product-card a').getAttribute('href'), /product_name=Yogur\+natural\+Beaki/);
     await productPage.locator('.product-card a').click();
     await productPage.locator('[data-product-detail] h2').waitFor();

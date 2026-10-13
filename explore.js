@@ -255,18 +255,18 @@
       results.replaceChildren(...products.map(product => {
         const card = node('article', 'product-card');
         const head = node('div', 'product-card-head');
-        const icon = node('span', 'product-image product-image-empty', '✳');
-        icon.setAttribute('aria-hidden', 'true');
-        head.append(icon);
+        const grade = product.insight?.generalGrade;
+        const hasGrade = typeof grade === 'number' && Number.isFinite(grade);
+        const score = node('span', `product-score ${hasGrade ? grade >= 7 ? 'product-score-high' : grade >= 4 ? 'product-score-mid' : 'product-score-low' : 'product-score-unavailable'}`);
+        score.setAttribute('aria-label', hasGrade ? `${say('Nota general', 'General score')}: ${formatNumber(grade)} ${say('de', 'out of')} 10` : say('Nota general no disponible', 'General score unavailable'));
+        if (hasGrade) score.append(node('strong', '', formatNumber(grade)), node('small', '', '/10'));
+        else score.append(node('small', '', say('Sin nota', 'No score')));
+        head.append(score);
         const identity = node('div');
         identity.append(node('p', 'product-brand', product.brand || say('Marca no indicada', 'Brand not listed')));
         identity.append(node('h3', '', product.name));
         head.append(identity); card.append(head);
         if (product.quantity) card.append(node('span', 'product-code', product.quantity));
-        const tags = node('div', 'product-nutrition');
-        if (product.foodGroup) tags.append(node('span', '', product.foodGroup.replaceAll('_', ' ').toLowerCase()));
-        (product.foodSubcategories || []).slice(0, 2).forEach(category => tags.append(node('span', '', category.replaceAll('_', ' ').toLowerCase())));
-        if (tags.childElementCount) card.append(tags);
         const link = node('a', 'product-source', say('Ver datos del producto →', 'View product details →'));
         link.href = productUrl(product);
         card.append(link);
