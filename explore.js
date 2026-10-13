@@ -340,15 +340,17 @@
     const normalize = value => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase();
     const render = () => {
       const query = normalize(input.value.trim());
-      const matches = items.filter(item => (kind === 'all' || item.kind === kind) && normalize([item.name.es, item.name.en, item.description.es, item.description.en].filter(Boolean).join(' ')).includes(query));
+      const matches = items.filter(item => (kind === 'all' || item.kind === kind || (kind === 'other' && !['diet', 'condition'].includes(item.kind))) && normalize([item.name.es, item.name.en, item.description.es, item.description.en].filter(Boolean).join(' ')).includes(query));
       count.textContent = say(`${matches.length} temas`, `${matches.length} topics`);
       profileResults.replaceChildren(...matches.slice(0, visible).map(item => {
         const card = node('article', 'profile-card');
-        card.append(node('div', 'card-eyebrow', item.kind === 'diet' ? say('DIETA', 'DIET') : say('CONDICIÓN', 'CONDITION')));
+        const kinds = { diet: ["DIETA", "DIET"], condition: ["CONDICIÓN", "CONDITION"], allergy: ["ALERGIA", "ALLERGY"], intolerance: ["INTOLERANCIA", "INTOLERANCE"], sensitivity: ["SENSIBILIDAD", "SENSITIVITY"], avoidance: ["PRECAUCIÓN", "AVOIDANCE"], context: ["CONTEXTO", "CONTEXT"], goal: ["OBJETIVO", "GOAL"] };
+        const kindLabel = kinds[item.kind] || ["PERFIL", "PROFILE"];
+        card.append(node('div', 'card-eyebrow', say(...kindLabel)));
         card.append(node('h3', '', item.name[lang()]));
         const description = item.description[lang()] || say('Este tema forma parte del catálogo de perfiles de Beaki.', 'This topic is part of Beaki’s profile catalogue.');
         card.append(node('p', '', description));
-        card.append(node('span', 'kind-badge', item.kind === 'diet' ? say('Alimentación', 'Eating pattern') : say('Salud', 'Health')));
+        card.append(node('span', 'kind-badge', say(...kindLabel)));
         return card;
       }));
       if (!matches.length) profileResults.append(node('p', 'empty-state', say('No hay resultados. Prueba con otro término.', 'No results. Try another term.')));
@@ -362,6 +364,6 @@
     }));
     document.querySelector('[data-profile-more-button]').addEventListener('click', () => { visible += 18; render(); });
     document.addEventListener('beaki:locale', render);
-    fetch('/assets/profile-catalog.json').then(response => { if (!response.ok) throw new Error('Catalogue unavailable'); return response.json(); }).then(data => { items = data.items; render(); }).catch(() => { profileResults.append(node('p', 'empty-state', say('No se pudo cargar el catálogo.', 'Catalogue could not load.'))); });
+    fetch('https://api.beaki.app/public/catalogues/profiles').then(response => { if (!response.ok) throw new Error('Catalogue unavailable'); return response.json(); }).then(data => { items = data.items; render(); }).catch(() => { profileResults.replaceChildren(node('p', 'empty-state', say('No se pudo cargar el catálogo.', 'Catalogue could not load.'))); });
   }
 })();

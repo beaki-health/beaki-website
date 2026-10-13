@@ -87,6 +87,13 @@ async function run() {
   try {
     browser = await engine.launch({ headless: true, ...(process.env.PLAYWRIGHT_CHANNEL ? { channel: process.env.PLAYWRIGHT_CHANNEL } : {}) });
     const context = await browser.newContext();
+    await context.route('https://api.beaki.app/public/catalogues/profiles', async (route) => {
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ version: 'test', items: [
+        { id: 'diet.coeliac', kind: 'diet', name: { es: 'Dieta para celiaquía', en: 'Coeliac diet' }, description: { es: 'Alimentación para la celiaquía', en: 'Eating with coeliac disease' } },
+        ...Array.from({ length: 20 }, (_, index) => ({ id: `diet.test_${index}`, kind: 'diet', name: { es: `Dieta ${index}`, en: `Diet ${index}` }, description: { es: '', en: '' } })),
+        { id: 'allergy.test', kind: 'allergy', name: { es: 'Alergia nueva', en: 'New allergy' }, description: { es: 'Alergia del catálogo activo', en: 'Allergy from the live catalogue' } }
+      ] }) });
+    });
     context.on('page', (page) => {
       page.on('pageerror', (error) => errors.push(error.message));
       page.on('response', (response) => { if (response.status() >= 400) errors.push(`${response.status()} ${response.url()}`); });
@@ -178,6 +185,10 @@ async function run() {
     assert.equal(await catalogue.locator('.profile-card .card-eyebrow').evaluateAll((all) => all.every((el) => el.textContent === 'DIETA')), true);
     await catalogue.locator('#profile-query').fill('');
     assert.equal(await catalogue.locator('.profile-card').count(), 18);
+    await catalogue.locator('[data-kind="other"]').click();
+    assert.match(await catalogue.locator('.profile-card').first().innerText(), /Alergia nueva/);
+    assert.equal(await catalogue.locator('.profile-card .card-eyebrow').first().innerText(), 'ALERGIA');
+    await catalogue.locator('[data-kind="diet"]').click();
     await catalogue.locator('[data-locale="en"]').click();
     assert.match(await catalogue.locator('.profile-card').first().innerText(), /diet/i);
     await catalogue.close();
