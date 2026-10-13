@@ -22,6 +22,8 @@
     const detail = document.querySelector('[data-product-detail]');
     let controller, requestId = 0, products = [];
     let selectedProduct;
+    let seoRefs = new Set();
+    const productSlug = value => value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 55).replace(/-$/, '') || 'producto';
     const formatNumber = value => new Intl.NumberFormat(lang() === 'es' ? 'es-ES' : 'en-GB', { maximumFractionDigits: value > 0 && value < 0.01 ? 4 : value > 0 && value < 1 ? 2 : 1 }).format(value);
     const allergenNames = {
       milk: ['Leche', 'Milk'], eggs: ['Huevos', 'Eggs'], egg: ['Huevos', 'Eggs'], gluten: ['Gluten', 'Gluten'], wheat: ['Trigo', 'Wheat'],
@@ -96,6 +98,7 @@
       });
     };
     const productUrl = product => {
+      if (seoRefs.has(product.productRef)) return `/catalogo/${productSlug(product.name)}--${product.productRef}.html`;
       const url = new URL('/products.html', location.origin);
       url.searchParams.set('product_name', product.name);
       url.searchParams.set('product_ref', product.productRef);
@@ -316,6 +319,22 @@
       search();
     });
     document.addEventListener('beaki:locale', () => { if (products.length) render(); if (selectedProduct) renderDetail(); });
+    fetch('/seo-refs.json').then(response => response.ok ? response.json() : []).then(refs => {
+      if (!Array.isArray(refs)) return;
+      seoRefs = new Set(refs);
+      if (products.length) render();
+      if (selectedProduct) {
+        const canonical = new URL(productUrl(selectedProduct), location.origin).href;
+        document.querySelector('link[rel="canonical"]').href = canonical;
+        document.querySelector('meta[property="og:url"]').content = canonical;
+        const structured = document.querySelector('#product-structured-data');
+        if (structured) {
+          const data = JSON.parse(structured.textContent);
+          data.url = canonical;
+          structured.textContent = JSON.stringify(data);
+        }
+      }
+    }).catch(() => {});
     const urlParams = new URLSearchParams(location.search);
     const urlQuery = urlParams.get('product_name') || urlParams.get('q');
     if (urlQuery) { input.value = urlQuery.slice(0, 80); search(); }

@@ -3,7 +3,9 @@
   "private": true,
   "description": "Dependency-free Beaki marketing site with browser checks",
   "scripts": {
-    "test": "node tests/website.cjs"
+    "test": "node tests/website.cjs",
+    "build:seo": "node scripts/build-seo-catalog.mjs",
+    "submit:indexnow": "node scripts/submit-indexnow.mjs"
   },
   "devDependencies": {
     "axe-core": "4.11.1",

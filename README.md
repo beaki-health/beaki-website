@@ -6,6 +6,22 @@ The production site uses semantic HTML, responsive CSS and vanilla JavaScript. F
 
 The public [product search](/products.html) uses the Beaki search index through `GET https://api.beaki.app/public/products/search` and reads product details through `GET /public/products/{productRef}`. Product links include `?product_name=...&product_ref=...` so a URL opens the matching product and updates its page metadata. It does not show signed-in, profile-specific scores. The [diet and condition catalogue](/profiles.html) is a static bilingual snapshot of `../Beaki/apps/mobile/data/catalogues/profile_concepts.json` (version recorded in `assets/profile-catalog.json`). Entries without a concept description use the definition in `../Beaki/docs/profiles/`, with a concise English translation. Refresh the snapshot when the app catalogue changes.
 
+## Product SEO catalogue
+
+`/catalogo/` links to 10,000 pre-rendered Spanish product pages with public Beaki data, unique canonical URLs and Product/Breadcrumb structured data. Product search links to these pages when a product is in the snapshot; existing `?product_name=...&product_ref=...` links still work. `sitemap.xml` indexes the page and product sitemaps, and `robots.txt` advertises the index.
+
+The selection samples evaluation-ready Spanish food products across common grocery search terms. It is a varied catalogue selection, not a ranking based on sales or search volume. Product `lastmod` comes from the source observation date. Refresh it after a material catalogue update:
+
+```sh
+cd ../Beaki
+AWS_PROFILE=naxusai-admin node --import tsx scripts/export-seo-products.mjs ../beaki-website/data/seo-products.json.gz
+cd ../beaki-website
+npm run build:seo
+npm test
+```
+
+The exporter reads the Beaki search and core DynamoDB tables, emits only public product fields and opaque product references, and never writes the reference secret to the website. Once a new snapshot is live, `npm run submit:indexnow` submits the published URLs to IndexNow. Submission is a discovery hint and does not guarantee indexing. Google discovers the sitemap through `robots.txt`; submitting it directly in Search Console requires access to the verified property.
+
 ## Local preview
 
 From this directory, run `python3 -m http.server 8080` and open `http://localhost:8080/`. Absolute asset paths require the repository to be the server root.
