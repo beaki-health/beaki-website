@@ -39,8 +39,27 @@
     const label = pair => pair[lang() === 'es' ? 0 : 1];
     const ingredientLabel = value => {
       if (typeof value !== 'string' || !/[A-ZÁÉÍÓÚÜÑ]/.test(value) || value !== value.toLocaleUpperCase('es-ES')) return value;
-      const lower = value.toLocaleLowerCase('es-ES').replace(/\b(uht|dop|igp|e\s*-?\s*\d{3,4})\b/gi, match => match.toLocaleUpperCase('es-ES'));
+      const lower = value.toLocaleLowerCase('es-ES').replace(/\b(uht|dop|igp|e\s*-?\s*\d{3,4}[a-z]{0,3})\b/gi, match => match.toLocaleUpperCase('es-ES')).replace(/\bph\b/gi, 'pH');
       return lower.replace(/[a-záéíóúüñ]/i, letter => letter.toLocaleUpperCase('es-ES'));
+    };
+    const ingredientTone = tone => ['NEGATIVE', 'POSITIVE', 'MIXED'].includes(tone) ? tone.toLowerCase() : 'neutral';
+    const appendIngredientText = (parent, source, highlights, fallbackTone = 'NEUTRAL') => {
+      const text = ingredientLabel(source);
+      const ranges = text.length === source.length && Array.isArray(highlights)
+        ? [...highlights].filter(span => Number.isInteger(span.start) && Number.isInteger(span.end) && span.start >= 0 && span.end <= text.length && span.end > span.start).sort((a, b) => a.start - b.start)
+        : [];
+      if (!ranges.length) {
+        parent.append(node('span', `ingredient-tone-${ingredientTone(fallbackTone)}`, text));
+        return;
+      }
+      let cursor = 0;
+      ranges.forEach(span => {
+        if (span.start < cursor) return;
+        if (span.start > cursor) parent.append(document.createTextNode(text.slice(cursor, span.start)));
+        parent.append(node('span', `ingredient-tone-${ingredientTone(span.tone)}`, text.slice(span.start, span.end)));
+        cursor = span.end;
+      });
+      if (cursor < text.length) parent.append(document.createTextNode(text.slice(cursor)));
     };
     const allergenLabel = value => {
       const key = value.replace(/^[a-z]{2}:/i, '').toLowerCase();
@@ -56,9 +75,10 @@
       entries.forEach(([key, title, unit, value]) => {
         if (typeof value !== 'number' || !Number.isFinite(value)) return;
         const fact = node('div', 'product-detail-fact');
-        fact.append(node('span', '', title));
-        fact.append(node('strong', '', `${formatNumber(value)} ${unit}`));
-        if (estimatedKeys.includes(key)) fact.append(node('small', '', say('Estimado', 'Estimated')));
+        const heading = node('span', 'product-detail-fact-heading');
+        heading.append(node('span', '', title));
+        if (estimatedKeys.includes(key)) heading.append(node('small', '', say('Estimado', 'Estimated')));
+        fact.append(heading, node('strong', '', `${formatNumber(value)} ${unit}`));
         grid.append(fact);
       });
       return grid;
@@ -168,12 +188,18 @@
       if (product.ingredientItems?.length) {
         const list = node('ul', 'product-detail-ingredient-list');
         product.ingredientItems.forEach(item => {
-          const entry = node('li', '', ingredientLabel(item.text));
+          const entry = node('li', `ingredient-item-${ingredientTone(item.tone)}`);
+          appendIngredientText(entry, item.text, item.highlights, item.tone);
           if (item.depth) entry.style.marginInlineStart = `${Math.min(item.depth, 3) * 16}px`;
           list.append(entry);
         });
         ingredients.append(list);
-      } else ingredients.append(node('p', 'product-detail-copy', product.ingredientsText || say('Ingredientes no disponibles.', 'Ingredients unavailable.')));
+      } else {
+        const copy = node('p', 'product-detail-copy');
+        if (product.ingredientDisplayText || product.ingredientsText) appendIngredientText(copy, product.ingredientDisplayText || product.ingredientsText, product.ingredientTextHighlights);
+        else copy.textContent = say('Ingredientes no disponibles.', 'Ingredients unavailable.');
+        ingredients.append(copy);
+      }
       detail.append(ingredients);
       const estimate = product.micronutrientEstimate;
       const micro = estimate?.per100 || {};
@@ -219,7 +245,7 @@
       if (!response.ok) return;
       const data = await response.json();
       if (data.product && data.product.productRef === product.productRef) {
-        selectedProduct = { ...data.product, generalGrade: data.generalGrade, generalScoreStart: data.generalScoreStart, generalScoreFactors: data.generalScoreFactors, ingredientItems: data.ingredientItems, micronutrientEstimate: data.micronutrientEstimate };
+        selectedProduct = { ...data.product, generalGrade: data.generalGrade, generalScoreStart: data.generalScoreStart, generalScoreFactors: data.generalScoreFactors, ingredientItems: data.ingredientItems, ingredientDisplayText: data.ingredientDisplayText, ingredientTextHighlights: data.ingredientTextHighlights, micronutrientEstimate: data.micronutrientEstimate };
         renderDetail();
       }
     };

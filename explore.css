@@ -43,3 +43,14 @@
 .product-detail-macro-legend span::before{content:'';width:8px;height:8px;flex:none;border-radius:50%;background:var(--macro-color)}
 .product-detail-macro-note{margin:6px 0 0;color:#667469;font-size:10px;line-height:1.4}
 @media(min-width:1000px){.product-detail-micronutrients .product-detail-facts,.product-detail-ingredient-list{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.product-detail-ingredient-list{padding-left:0;list-style:none}
+.product-detail-ingredient-list li{position:relative;padding:2px 0 2px 18px}
+.product-detail-ingredient-list li::before{content:'•';position:absolute;left:0;color:#405145;font-weight:800}
+.product-detail-ingredient-list .ingredient-item-negative::before{content:'−';color:#a6353d}
+.product-detail-ingredient-list .ingredient-item-positive::before{content:'+';color:#17513a}
+.product-detail-ingredient-list .ingredient-item-mixed::before{content:'±';color:#8a5a00}
+.ingredient-tone-negative{color:#a6353d;font-weight:750}.ingredient-tone-positive{color:#17513a;font-weight:750}.ingredient-tone-mixed{color:#8a5a00;font-weight:750}
+.product-detail-fact-heading{display:inline-flex;align-items:baseline;flex-wrap:wrap;gap:3px 6px;min-width:0;flex:1}
+.product-detail-fact-heading small{display:inline;margin:0;font-size:10px;font-weight:700;color:#86621d}
+.product-detail-micronutrients .product-detail-fact small{order:initial}
+@media(min-width:1100px){.product-detail-micronutrients .product-detail-facts{grid-template-columns:repeat(4,minmax(0,1fr))}}

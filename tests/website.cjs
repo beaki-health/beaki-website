@@ -188,7 +188,7 @@ async function run() {
       await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ products: [{ productRef, name: 'Yogur natural Beaki', brand: 'Beaki', quantity: '500 g', market: 'ES', categories: [], completeness: 1 }] }) });
     });
     await productPage.route(`https://api.beaki.app/public/products/${productRef}`, async (route) => {
-      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ product: { productRef, name: 'Yogur natural Beaki', brand: 'Beaki', quantity: '500 g', market: 'ES', ingredientsText: 'LECHE UHT Y FERMENTOS', allergens: ['en:milk'], traces: ['en:nuts'], nutrientsPer100: { energyKcal: 62, proteinG: 3.7, carbohydratesG: 4.8, fatG: 3.2, saturatedFatG: 2, sugarsG: 4.8, saltG: 0.12 } }, generalGrade: 8.2, generalScoreFactors: [{ code: 'CLEAN_INGREDIENTS', effect: 0.2 }, { code: 'MODERATE_SUGAR', effect: -1 }], ingredientItems: [{ text: 'LECHE UHT', depth: 0 }, { text: 'FERMENTOS', depth: 0 }], micronutrientEstimate: { per100: { calciumMg: 120 }, estimatedKeys: ['calciumMg'], nutritionBasis: 'PER_100_G' } }) });
+      await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ product: { productRef, name: 'Yogur natural Beaki', brand: 'Beaki', quantity: '500 g', market: 'ES', ingredientsText: 'LECHE UHT Y FERMENTOS', allergens: ['en:milk'], traces: ['en:nuts'], nutrientsPer100: { energyKcal: 62, proteinG: 3.7, carbohydratesG: 4.8, fatG: 3.2, saturatedFatG: 2, sugarsG: 4.8, saltG: 0.12 } }, generalGrade: 8.2, generalScoreFactors: [{ code: 'CLEAN_INGREDIENTS', effect: 0.2 }, { code: 'MODERATE_SUGAR', effect: -1 }], ingredientItems: [{ text: 'LECHE UHT', depth: 0, tone: 'NEUTRAL', highlights: [] }, { text: 'FERMENTOS', depth: 0, tone: 'NEUTRAL', highlights: [] }, { text: 'ASPARTAMO', depth: 0, tone: 'NEGATIVE', highlights: [{ start: 0, end: 9, tone: 'NEGATIVE' }] }], micronutrientEstimate: { per100: { calciumMg: 120 }, estimatedKeys: ['calciumMg'], nutritionBasis: 'PER_100_G' } }) });
     });
     await productPage.goto(`${base}/products.html?lang=en`);
     await productPage.locator('#product-query').fill('Yogur natural');
@@ -203,20 +203,22 @@ async function run() {
     assert.match(await productPage.locator('[data-product-detail]').innerText(), /Milk/);
     assert.equal(await productPage.locator('.product-detail-macro-line span').count(), 3);
     assert.match(await productPage.locator('.product-detail-macro-line').getAttribute('aria-label'), /Protein 31.6 %/);
-    assert.equal(await productPage.locator('.product-detail-ingredient-list li').count(), 2);
+    assert.equal(await productPage.locator('.product-detail-ingredient-list li').count(), 3);
+    assert.equal(await productPage.locator('.product-detail-ingredient-list .ingredient-tone-negative').innerText(), 'Aspartamo');
+    assert.match(await productPage.locator('.product-detail-ingredient-list .ingredient-tone-negative').evaluate(el => getComputedStyle(el).color), /rgb\(166, 53, 61\)/);
     assert.equal(await productPage.locator('.product-detail-micronutrients').evaluate(el => el.open), false);
     await productPage.locator('.product-detail-score-breakdown summary').click();
     assert.match(await productPage.locator('.product-detail-score-breakdown').innerText(), /No added sugar or additives/);
     await productPage.locator('.product-detail-micronutrients summary').click();
     assert.match(await productPage.locator('[data-product-detail]').innerText(), /120 mg/);
     await productPage.setViewportSize({ width: 1200, height: 900 });
-    assert.equal((await productPage.locator('.product-detail-micronutrients .product-detail-facts').first().evaluate(el => getComputedStyle(el).gridTemplateColumns)).split(' ').length, 3);
+    assert.equal((await productPage.locator('.product-detail-micronutrients .product-detail-facts').first().evaluate(el => getComputedStyle(el).gridTemplateColumns)).split(' ').length, 4);
     assert.equal((await productPage.locator('.product-detail-ingredient-list').evaluate(el => getComputedStyle(el).gridTemplateColumns)).split(' ').length, 3);
     assert.match(productPage.url(), /product_name=Yogur\+natural\+Beaki/);
     assert.match(await productPage.title(), /Yogur natural Beaki/);
     await productPage.goto(`${base}/products.html?product_name=Yogur+natural+Beaki&lang=es`);
     await productPage.locator('[data-product-detail] h2').waitFor();
-    assert.deepEqual(await productPage.locator('.product-detail-ingredient-list li').allInnerTexts(), ['Leche UHT', 'Fermentos']);
+    assert.deepEqual(await productPage.locator('.product-detail-ingredient-list li').allInnerTexts(), ['Leche UHT', 'Fermentos', 'Aspartamo']);
     await productPage.close();
     console.log('✓ Public product search and the complete profile catalogue are interactive');
 
