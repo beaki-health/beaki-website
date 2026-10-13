@@ -15,7 +15,7 @@ for (const sitemap of ['sitemap-pages.xml', ...Array.from({ length: 5 }, (_, i) 
   const xml = readFileSync(resolve(root, sitemap), 'utf8');
   for (const match of xml.matchAll(/<loc>(https:\/\/www\.beaki\.app\/[^<]*)<\/loc>/g)) urls.push(match[1].replaceAll('&amp;', '&'));
 }
-if (urls.length !== 10054 || new Set(urls).size !== urls.length) throw new Error(`Expected 10,054 unique sitemap URLs, got ${urls.length}`);
+if (urls.length !== 10004 || new Set(urls).size !== urls.length) throw new Error(`Expected 10,004 unique sitemap URLs, got ${urls.length}`);
 
 for (let offset = 0; offset < urls.length; offset += 2000) {
   const urlList = urls.slice(offset, offset + 2000);

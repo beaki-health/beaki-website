@@ -1,6 +1,5 @@
 User-agent: *
 Allow: /
-Disallow: /data/
 Disallow: /scripts/
 
 Sitemap: https://www.beaki.app/sitemap.xml

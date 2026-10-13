@@ -22,8 +22,6 @@
     const detail = document.querySelector('[data-product-detail]');
     let controller, requestId = 0, products = [];
     let selectedProduct;
-    let seoRefs = new Set();
-    const productSlug = value => value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 55).replace(/-$/, '') || 'producto';
     const formatNumber = value => new Intl.NumberFormat(lang() === 'es' ? 'es-ES' : 'en-GB', { maximumFractionDigits: value > 0 && value < 0.01 ? 4 : value > 0 && value < 1 ? 2 : 1 }).format(value);
     const allergenNames = {
       milk: ['Leche', 'Milk'], eggs: ['Huevos', 'Eggs'], egg: ['Huevos', 'Eggs'], gluten: ['Gluten', 'Gluten'], wheat: ['Trigo', 'Wheat'],
@@ -98,7 +96,6 @@
       });
     };
     const productUrl = product => {
-      if (seoRefs.has(product.productRef)) return `/catalogo/${productSlug(product.name)}--${product.productRef}.html`;
       const url = new URL('/products.html', location.origin);
       url.searchParams.set('product_name', product.name);
       url.searchParams.set('product_ref', product.productRef);
@@ -245,12 +242,14 @@
     };
     const loadDetail = async product => {
       const response = await fetch(`https://api.beaki.app/public/products/${encodeURIComponent(product.productRef)}`);
-      if (!response.ok) return;
+      if (!response.ok) return false;
       const data = await response.json();
       if (data.product && data.product.productRef === product.productRef) {
         selectedProduct = { ...data.product, generalGrade: data.generalGrade, generalScoreStart: data.generalScoreStart, generalScoreFactors: data.generalScoreFactors, ingredientItems: data.ingredientItems, ingredientDisplayText: data.ingredientDisplayText, ingredientTextHighlights: data.ingredientTextHighlights, micronutrientEstimate: data.micronutrientEstimate };
         renderDetail();
+        return true;
       }
+      return false;
     };
     const render = () => {
       results.replaceChildren(...products.map(product => {
@@ -319,25 +318,16 @@
       search();
     });
     document.addEventListener('beaki:locale', () => { if (products.length) render(); if (selectedProduct) renderDetail(); });
-    fetch('/seo-refs.json').then(response => response.ok ? response.json() : []).then(refs => {
-      if (!Array.isArray(refs)) return;
-      seoRefs = new Set(refs);
-      if (products.length) render();
-      if (selectedProduct) {
-        const canonical = new URL(productUrl(selectedProduct), location.origin).href;
-        document.querySelector('link[rel="canonical"]').href = canonical;
-        document.querySelector('meta[property="og:url"]').content = canonical;
-        const structured = document.querySelector('#product-structured-data');
-        if (structured) {
-          const data = JSON.parse(structured.textContent);
-          data.url = canonical;
-          structured.textContent = JSON.stringify(data);
-        }
-      }
-    }).catch(() => {});
     const urlParams = new URLSearchParams(location.search);
     const urlQuery = urlParams.get('product_name') || urlParams.get('q');
-    if (urlQuery) { input.value = urlQuery.slice(0, 80); search(); }
+    const requestedRef = urlParams.get('product_ref');
+    if (requestedRef && /^p1_[A-Za-z0-9_-]{56}$/.test(requestedRef)) {
+      input.value = (urlQuery || '').slice(0, 80);
+      status.textContent = say('Cargando producto de Beaki…', 'Loading Beaki product…');
+      loadDetail({ productRef: requestedRef }).then(found => {
+        status.textContent = found ? say('Ficha del catálogo Beaki', 'Beaki catalogue product') : say('No se encontró este producto.', 'This product was not found.');
+      }).catch(() => { status.textContent = say('No se pudo cargar el producto. Inténtalo de nuevo.', 'The product could not be loaded. Please try again.'); });
+    } else if (urlQuery) { input.value = urlQuery.slice(0, 80); search(); }
   }
 
   const profileResults = document.querySelector('[data-profile-results]');

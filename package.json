@@ -4,7 +4,7 @@
   "description": "Dependency-free Beaki marketing site with browser checks",
   "scripts": {
     "test": "node tests/website.cjs",
-    "build:seo": "node scripts/build-seo-catalog.mjs",
+    "build:seo": "node scripts/build-product-sitemaps.mjs",
     "submit:indexnow": "node scripts/submit-indexnow.mjs"
   },
   "devDependencies": {

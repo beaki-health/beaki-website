@@ -184,7 +184,9 @@ async function run() {
 
     const productPage = await context.newPage();
     const productRef = `p1_${'A'.repeat(56)}`;
+    let productSearchCalls = 0;
     await productPage.route('https://api.beaki.app/public/products/search?*', async (route) => {
+      productSearchCalls++;
       await route.fulfill({ contentType: 'application/json', body: JSON.stringify({ products: [{ productRef, name: 'Yogur natural Beaki', brand: 'Beaki', quantity: '500 g', market: 'ES', categories: [], completeness: 1 }] }) });
     });
     await productPage.route(`https://api.beaki.app/public/products/${productRef}`, async (route) => {
@@ -219,6 +221,11 @@ async function run() {
     await productPage.goto(`${base}/products.html?product_name=Yogur+natural+Beaki&lang=es`);
     await productPage.locator('[data-product-detail] h2').waitFor();
     assert.deepEqual(await productPage.locator('.product-detail-ingredient-list li').allInnerTexts(), ['Leche UHT', 'Fermentos', 'Aspartamo']);
+    const previousSearchCalls = productSearchCalls;
+    await productPage.goto(`${base}/products.html?product_name=Yogur+natural+Beaki&product_ref=${productRef}&lang=es`);
+    await productPage.locator('[data-product-detail] h2').waitFor();
+    assert.equal(productSearchCalls, previousSearchCalls, 'An exact product URL must load by reference without a search');
+    assert.match(await productPage.locator('link[rel="canonical"]').getAttribute('href'), /product_ref=p1_/);
     await productPage.close();
     console.log('✓ Public product search and the complete profile catalogue are interactive');
 
