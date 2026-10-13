@@ -35,6 +35,7 @@
       ['proteinG', 'Proteínas', 'Protein', 'g'], ['saltG', 'Sal', 'Salt', 'g'], ['sodiumMg', 'Sodio', 'Sodium', 'mg']
     ];
     const microNames = window.beakiMicronutrientLabels || {};
+    const reasonNames = window.beakiScoreReasonLabels || {};
     const label = pair => pair[lang() === 'es' ? 0 : 1];
     const allergenLabel = value => {
       const key = value.replace(/^[a-z]{2}:/i, '').toLowerCase();
@@ -50,8 +51,8 @@
       entries.forEach(([key, title, unit, value]) => {
         if (typeof value !== 'number' || !Number.isFinite(value)) return;
         const fact = node('div', 'product-detail-fact');
-        fact.append(node('strong', '', `${formatNumber(value)} ${unit}`));
         fact.append(node('span', '', title));
+        fact.append(node('strong', '', `${formatNumber(value)} ${unit}`));
         if (estimatedKeys.includes(key)) fact.append(node('small', '', say('Estimado', 'Estimated')));
         grid.append(fact);
       });
@@ -100,9 +101,31 @@
       const nutrients = product.nutrientsPer100 || {};
       const basis = product.nutritionBasis === 'PER_100_ML' ? '100 ml' : '100 g';
       const score = node('section', 'product-detail-score');
-      score.append(node('p', 'card-eyebrow', say('NOTA GENERAL', 'GENERAL SCORE')));
-      score.append(node('strong', '', typeof product.generalGrade === 'number' ? `${formatNumber(product.generalGrade)}/10` : '—/10'));
-      score.append(node('p', '', say('La nota general no incluye tu perfil. Consulta tu nota personalizada y recomendaciones en la app.', 'The general score does not use your profile. View your personal score and recommendations in the app.')));
+      const scoreHeader = node('div', 'product-detail-score-header');
+      const scoreHeading = node('div');
+      scoreHeading.append(node('p', 'card-eyebrow', say('NOTA GENERAL', 'GENERAL SCORE')));
+      scoreHeading.append(node('strong', '', typeof product.generalGrade === 'number' ? `${formatNumber(product.generalGrade)}/10` : '—/10'));
+      scoreHeader.append(scoreHeading);
+      scoreHeader.append(node('p', '', say('Sin tu perfil · Tu nota personal está en la app', 'Without your profile · Your personal score is in the app')));
+      score.append(scoreHeader);
+      const scoreBreakdown = node('details', 'product-detail-disclosure product-detail-score-breakdown');
+      scoreBreakdown.append(node('summary', '', say('Ver desglose de la nota', 'View score breakdown')));
+      const scoreRows = node('div', 'product-detail-score-rows');
+      const starting = node('div', 'product-detail-score-row');
+      starting.append(node('span', '', say('Nota inicial', 'Starting score')), node('strong', '', `${formatNumber(typeof product.generalScoreStart === 'number' ? product.generalScoreStart : 9)}/10`));
+      scoreRows.append(starting);
+      (product.generalScoreFactors || []).forEach(factor => {
+        if (!factor || typeof factor.effect !== 'number') return;
+        const code = factor.effect <= -1 ? ({ MODERATE_SUGAR: 'HIGH_SUGAR', MODERATE_SALT: 'HIGH_SALT', MODERATE_SATURATED_FAT: 'HIGH_SATURATED_FAT', MODERATE_ENERGY_DENSITY: 'HIGH_ENERGY_DENSITY', MODERATE_FAT_DENSITY: 'HIGH_FAT_DENSITY', BEVERAGE_SUGAR_MODERATE: 'BEVERAGE_SUGAR_HIGH', LIQUID_FREE_SUGAR_MODERATE: 'LIQUID_FREE_SUGAR_HIGH', HIGH_SATURATED_FAT_SHARE: 'VERY_HIGH_SATURATED_FAT_SHARE' }[factor.code] || factor.code) : factor.code;
+        const row = node('div', 'product-detail-score-row');
+        row.append(node('span', '', reasonNames[code]?.[lang() === 'es' ? 0 : 1] || code.replaceAll('_', ' ').toLowerCase()), node('strong', factor.effect < 0 ? 'negative' : 'positive', `${factor.effect > 0 ? '+' : '−'}${formatNumber(Math.abs(factor.effect))}`));
+        scoreRows.append(row);
+      });
+      const finalRow = node('div', 'product-detail-score-row product-detail-score-final');
+      finalRow.append(node('span', '', say('Nota general', 'General score')), node('strong', '', typeof product.generalGrade === 'number' ? `${formatNumber(product.generalGrade)}/10` : '—/10'));
+      scoreRows.append(finalRow);
+      scoreRows.append(node('p', 'product-detail-score-note', say('La nota se mantiene entre 0 y 10; cada factor muestra su efecto por separado.', 'The score stays between 0 and 10; each factor shows its independent effect.')));
+      scoreBreakdown.append(scoreRows); score.append(scoreBreakdown);
       detail.append(score);
       const nutrition = section(`${say('Información nutricional', 'Nutrition facts')} / ${basis}`, 'product-detail-nutrition');
       nutrition.append(factGrid(nutrientRows.map(([key, es, en, unit]) => [key, label([es, en]), unit, nutrients[key]])));
@@ -114,7 +137,15 @@
       if (traces.length) allergenSection.append(node('p', 'product-detail-copy', `${say('Posibles trazas', 'Possible traces')}: ${traces.map(allergenLabel).join(', ')}`));
       detail.append(allergenSection);
       const ingredients = section(say('Ingredientes', 'Ingredients'), 'product-detail-ingredients');
-      ingredients.append(node('p', 'product-detail-copy', product.ingredientsText || say('Ingredientes no disponibles.', 'Ingredients unavailable.')));
+      if (product.ingredientItems?.length) {
+        const list = node('ul', 'product-detail-ingredient-list');
+        product.ingredientItems.forEach(item => {
+          const entry = node('li', '', item.text);
+          if (item.depth) entry.style.marginInlineStart = `${Math.min(item.depth, 3) * 16}px`;
+          list.append(entry);
+        });
+        ingredients.append(list);
+      } else ingredients.append(node('p', 'product-detail-copy', product.ingredientsText || say('Ingredientes no disponibles.', 'Ingredients unavailable.')));
       detail.append(ingredients);
       const estimate = product.micronutrientEstimate;
       const micro = estimate?.per100 || {};
@@ -126,7 +157,8 @@
         const unit = key.endsWith('Ug') ? 'µg' : key.endsWith('G') ? 'g' : 'mg';
         return [key, microNames[key]?.[lang()] || key.replace(/(Mg|Ug|G)$/, '').replace(/([a-z])([A-Z])/g, '$1 $2'), microNames[key]?.unit || unit, value];
       });
-      const micronutrients = section(say('Micronutrientes', 'Micronutrients'), 'product-detail-micronutrients');
+      const micronutrients = node('details', 'product-detail-micronutrients product-detail-disclosure');
+      micronutrients.append(node('summary', '', `${say('Micronutrientes', 'Micronutrients')} · ${microEntries.length + massEntries.length}`));
       if (microEntries.length) {
         micronutrients.append(node('p', 'product-detail-hint', `${say('Por', 'Per')} ${estimate.nutritionBasis === 'PER_100_ML' ? '100 ml' : '100 g'}. ${estimate.estimatedKeys?.length ? say('Los valores marcados son estimaciones.', 'Marked values are estimates.') : say('Valores declarados en la etiqueta.', 'Values declared on the label.')}`));
         appendMicroGroups(micronutrients, microEntries, estimate.estimatedKeys || []);
@@ -159,7 +191,7 @@
       if (!response.ok) return;
       const data = await response.json();
       if (data.product && data.product.productRef === product.productRef) {
-        selectedProduct = { ...data.product, generalGrade: data.generalGrade, micronutrientEstimate: data.micronutrientEstimate };
+        selectedProduct = { ...data.product, generalGrade: data.generalGrade, generalScoreStart: data.generalScoreStart, generalScoreFactors: data.generalScoreFactors, ingredientItems: data.ingredientItems, micronutrientEstimate: data.micronutrientEstimate };
         renderDetail();
       }
     };
