@@ -243,7 +243,11 @@ async function run() {
     console.log('✓ Public product search and the complete profile catalogue are interactive');
 
     const links = await page.locator('a[href*="play.google.com"]').evaluateAll((all) => all.map((a) => a.href));
-    assert(links.length >= 5 && links.every((href) => href === 'https://play.google.com/store/apps/details?id=com.hacktricks.beaki'));
+    assert.equal(links.length, 2);
+    assert(links.every((href) => href === 'https://play.google.com/store/apps/details?id=com.hacktricks.beaki'));
+    const appleLinks = await page.locator('a[href*="apps.apple.com/app/"]').evaluateAll((all) => all.map((a) => a.href));
+    assert.deepEqual(appleLinks, Array(2).fill('https://apps.apple.com/app/id6820615094'));
+    assert.equal(await page.locator('.nav-cta').getAttribute('href'), '/#descargar');
     assert.deepEqual(errors, []);
     console.log('✓ Store links and no JavaScript, network or HTTP errors');
     await context.close();
