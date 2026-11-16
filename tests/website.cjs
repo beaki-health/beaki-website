@@ -99,7 +99,7 @@ async function run() {
       page.on('response', (response) => { if (response.status() >= 400) errors.push(`${response.status()} ${response.url()}`); });
       page.on('requestfailed', (request) => errors.push(`${request.url()}: ${request.failure()?.errorText}`));
     });
-    for (const route of ['/', '/legal.html', '/products.html', '/profiles.html']) {
+    for (const route of ['/', '/legal.html', '/consumer-health-privacy.html', '/products.html', '/profiles.html']) {
       for (const lang of ['es', 'en']) {
         const page = await context.newPage();
         for (const width of widths) {
