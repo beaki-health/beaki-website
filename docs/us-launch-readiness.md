@@ -1,14 +1,14 @@
 # US legal and product readiness — 16 November 2026
 
-Status: **review draft, not approved for publication or a US compliance certification**.
+Status: **website publication requested by the owner; operational and legal review items below remain open. This document is an engineering assessment, not a US compliance certification.**
 
-The `us-legal-review` branch contains bilingual proposed changes to `legal.html`, a separate `consumer-health-privacy.html` policy, and footer links to that policy. Both legal documents visibly identify themselves as drafts and carry `noindex,nofollow`. They do not replace the production policies. The approved social icon changes were published independently.
+The website update contains bilingual changes to `legal.html`, a separate `consumer-health-privacy.html` policy, and footer links to that policy. At the owner’s explicit request, the public pages contain no draft notices, missing-information messages or placeholders. Operator details will be added when supplied. Removing editorial notices does not resolve the implementation and legal review items recorded here. The approved social icon changes were published independently.
 
 ## Decisions and missing facts
 
 The owner confirmed that there is no company yet. A natural person can be the operator; incorporation is not assumed to be required. Obtain the actual operator's full legal name, appropriate postal contact address, country, and any applicable business identification before completing the notices. Do not invent a company or reuse a personal address found elsewhere.
 
-The draft preserves Spanish governing law with mandatory US consumer protections. A US market does not by itself justify inventing a US entity, choosing an arbitrary state, adding compulsory arbitration or making users waive privacy rights.
+The policy preserves Spanish governing law with mandatory US consumer protections. A US market does not by itself justify inventing a US entity, choosing an arbitrary state, adding compulsory arbitration or making users waive privacy rights.
 
 Proposed family model: adult account holders only; child profiles are entered and controlled by an authorised parent/guardian; other adults require authority and notice. Confirm the actual distribution, marketing and usage model with counsel. A terms sentence alone cannot establish that children never directly use the app.
 
@@ -30,7 +30,7 @@ These are observations from the adjacent `../Beaki` source tree, not an audit of
 ## Legal review notes and primary sources
 
 - **Washington:** separate linked health policy, disclosed categories/sources/recipients and purpose-specific consent analysis. Small businesses are not generally exempt. Sources: [RCW 19.373.020](https://app.leg.wa.gov/RCW/default.aspx?cite=19.373.020), [RCW 19.373.030](https://app.leg.wa.gov/RCW/default.aspx?cite=19.373.030).
-- **Requests:** Washington provides access, withdrawal, deletion and appeal rights; applicable deadlines and backup deletion need operational handling. Source: [RCW 19.373.040](https://app.leg.wa.gov/RCW/default.aspx?cite=19.373.040). The draft includes these rights; it does not prove they can currently be fulfilled.
+- **Requests:** Washington provides access, withdrawal, deletion and appeal rights; applicable deadlines and backup deletion need operational handling. Source: [RCW 19.373.040](https://app.leg.wa.gov/RCW/default.aspx?cite=19.373.040). The policy includes these rights; it does not prove they can currently be fulfilled.
 - **Nevada:** review the dedicated health-data rules and processor contracts separately from general state privacy thresholds. Source: [NRS 603A.400–603A.550](https://www.leg.state.nv.us/Nrs/NRS-603A.html). Counsel should review other states too; this is not a fifty-state survey.
 - **California:** assess CCPA applicability, sensitive data obligations and rights using actual business facts; do not assert automatic coverage or exemption. Also evaluate CMIA's application provisions; the medical-device disclaimer does not resolve that question. Sources: [California DOJ CCPA guidance](https://oag.ca.gov/privacy/ccpa), [Civil Code 56.06](https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CIV&sectionNum=56.06.) (official text requires manual verification; automated retrieval returned 403).
 - **HBNR:** counsel should assess whether Beaki is a personal-health-record vendor, including its technical ability to combine sources. If covered, notify individuals without unreasonable delay and within 60 calendar days after discovery. For 500+ affected people notify the FTC alongside individual notices; for fewer, within 60 days after year-end. Media notice has a separate 500-residents-in-one-state/jurisdiction test. Do not wait for day 60 if ready earlier, and do not treat lack of a hack as proof there was no breach. Source: [FTC compliance guidance](https://www.ftc.gov/business-guidance/resources/complying-ftcs-health-breach-notification-rule-0).
@@ -40,8 +40,8 @@ These are observations from the adjacent `../Beaki` source tree, not an audit of
 
 ## Release procedure
 
-1. Complete operator details and vendor/affiliate inventory; reconcile every statement in both languages with actual operations. Remove all draft placeholders only after the facts are confirmed.
+1. Complete operator details and vendor/affiliate inventory; reconcile every statement in both languages with actual operations. Add confirmed operator details when supplied; do not invent them.
 2. Obtain US counsel review of applicability, family use, consents, notices and subscription mechanics. Complete the implementation items above and retain verification evidence. A rewritten policy is not launch clearance.
 3. Coordinate app/API versioning and existing-user notices; preserve a dated copy of the prior published policies.
-4. Remove draft warnings and robots noindex only for the approved final release; use its real effective date. Add `consumer-health-privacy.html` to the page sitemap and refresh its lastmod, without rebuilding unrelated product sitemaps.
+4. The owner requested public-facing copy without draft warnings or missing-information notes. Both public policies use 16 November 2026 as their version date, and the health policy is included in the page sitemap. Keep editorial review notes in repository documentation, not in the product UI.
 5. Run browser checks on five pages in both languages, verify the dedicated homepage health-policy link, deploy the approved release and check production content. Social pages and posts are outside this task.
